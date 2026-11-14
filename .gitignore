@@ -36,3 +36,4 @@ Thumbs.db
 # ---------- upload credentials ----------
 config/github.token
 
+config/_device.json
