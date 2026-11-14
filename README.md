@@ -13,7 +13,7 @@
 
 - **纯本地**：音频只在内存里流转，不落盘、不上传网络
 - **实时**：一句中文说完后约 3–7 秒出英文（2B 模型 CPU 推理的物理上限）
-- **双语对照**：英文大字（46sp）+ 中文小字（21sp）；**上一句与当前句同样式**，各自可换行完整显示
+- **双向互译**：中→英 / 英→中 自动判断；大字是译文、小字是原文，**上一句与当前句同样式**，各自可换行完整显示
 - **全屏白底黑字**：`#FFFFFF` / `#000000`，适合 5 米内观看
 - **真悬浮窗**：`TYPE_APPLICATION_OVERLAY`，盖在其他 App 之上，有「隐藏 / 退出」按钮
 - **无需 root**：日常使用只要在 Termux 里跑一条命令
@@ -23,7 +23,7 @@
 
 ### 1. 安装 APK
 
-下载 [`release/ITX-Subtitle-1.1.apk`](release/ITX-Subtitle-1.1.apk) 并安装（需允许"安装未知应用"）。
+下载 [`release/ITX-Subtitle-1.2.apk`](release/ITX-Subtitle-1.2.apk) 并安装（需允许"安装未知应用"）。
 
 安装后给两个权限（**MIUI 必须两个都给**，否则录音会静默返回全 0）：
 
@@ -98,7 +98,7 @@ bash ~/itx-src/tools/bootstrap_phone.sh
   crispasr --server（index-echo-2b Q8，常驻，7 线程）
       │      中文转写 + 英文翻译（逐句对照）
       ▼  TCP 127.0.0.1:17321（JSON 行）
-  悬浮窗 App（上一句与这一句同样式大字 / 中文小字）
+  悬浮窗 App（大字=译文，小字=原文，中英自动切换）
 ```
 
 ## 项目结构
@@ -115,7 +115,7 @@ bash ~/itx-src/tools/bootstrap_phone.sh
 │  ├─ app/                   悬浮窗 App 源码（Java）
 │  └─ *.png                  界面实拍
 ├─ release/
-│  └─ ITX-Subtitle-1.0.apk   预编译 APK
+│  ├─ ITX-Subtitle-1.2.apk   预编译 APK（最新）
 ├─ tools/
 │  ├─ phone.py               SSH/SFTP 小工具（凭据从 config/phone.env 读取）
 │  ├─ build_apk.sh           手机上构建 APK 的完整流程
@@ -134,15 +134,34 @@ bash ~/itx-src/tools/bootstrap_phone.sh
 | `ITX_SILENCE_MS` | `550` | 静音多久算一句结束 |
 | `ITX_MAX_SEG_MS` | `5000` | 单句最长长度 |
 | `ITX_THREADS` | `7` | 推理线程数（8 会死锁） |
+| `ITX_ASK` | 双向指令 | 覆盖模型指令；改它可固定单向或换目标语言 |
+
+## 双向互译（中 ⇄ 英）
+
+CrispASR 的 `--target-lang` 只暴露 en/ja/es，但 index-echo 本质是"按指令输出三行字幕"的音频大模型，
+用 `--ask` 改写指令就能让它翻成**另一种语言**：
+
+- **说中文** → 英文大字 + 中文小字；
+- **说英文** → 中文大字 + 英文小字；
+- 方向由字幕内容自动判断，不需要任何开关。
+
+指令原文（`itx/live.py` 的 `BIDIR_ASK`）：
+
+```
+For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp,
+the transcript, then the translation into the other language
+(Chinese speech -> English; English speech -> Chinese).
+```
+
+想固定成单向，启动前用 `export ITX_ASK='...'` 覆盖即可。
 
 ## 已知限制
 
-- **只支持中→英**：index-echo 原方向是中文语音 → 英/日/西文本，说英文能识别但没有中文对照。
-  想要双向互译需另加一个小翻译模型（约 84 MB）。
 - 单句超过 5 秒会被强制切分，字幕可能分成两条。
 - 安静环境偶尔被环境噪声触发，产生空转写（立即返回，不影响使用）。
 - 状态栏图标无法被第三方悬浮窗覆盖（系统限制）。
 - 首次启动模型加载约 5 秒。
+- 同一会话里中英混说时，模型的上下文可能串味，偶发一行错位（重新开始会话即可恢复）。
 
 ## 相关项目
 

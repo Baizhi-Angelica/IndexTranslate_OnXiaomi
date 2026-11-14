@@ -34,6 +34,7 @@ Termux 已安装、代理 `127.0.0.1:7890` 可用、`pkg install python git open
 | 悬浮窗必须**可触摸** | MIUI 会把"全屏且不可触摸"的 overlay 压到 α=0.8，背景透出 |
 | `live.py` 的 8× 增益 | 手机原始麦克风电平约 −46 dBFS，不加增益服务端 VAD 直接判"无人说话" |
 | 日常流程不依赖 root | 引擎由用户 `bash ~/itx/start.sh` 启动并自动 `am start` 拉起 App |
+| 不要删掉 `BIDIR_ASK` | `--target-lang` 只有 en/ja/es；双向（中⇄英）靠 `--ask` 改写指令实现，删了就只剩单向 |
 
 ## 关键路径
 

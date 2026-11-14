@@ -98,8 +98,8 @@ public class SubtitleService extends Service {
     private Thread audioThread;
     private Thread textThread;
 
-    private String lastEn = "";
-    private String lastZh = "";
+    private String lastMain = "";
+    private String lastSub = "";
 
     // ---------------------------------------------------------------- lifecycle
 
@@ -571,28 +571,37 @@ public class SubtitleService extends Service {
                     setStatus("● 出错：" + o.optString("detail", ""));
                 }
             }
-            if (o.has("en") || o.has("zh")) {
-                String newEn = o.optString("en", lastEn);
-                String newZh = o.optString("zh", lastZh);
-                if (newEn.equals(lastEn) && newZh.equals(lastZh)) {
+            if (o.has("main") || o.has("sub") || o.has("en") || o.has("zh")) {
+                // "main" = big line (the translation), "sub" = small line (the transcript).
+                // Older bridges send en/zh instead.
+                String newMain;
+                String newSub;
+                if (o.has("main") || o.has("sub")) {
+                    newMain = o.optString("main", "");
+                    newSub = o.optString("sub", "");
+                } else {
+                    newMain = o.optString("en", "");
+                    newSub = o.optString("zh", "");
+                }
+                if (newMain.equals(lastMain) && newSub.equals(lastSub)) {
                     return;
                 }
-                final String pEn = lastEn;
-                final String pZh = lastZh;
-                lastEn = newEn;
-                lastZh = newZh;
+                final String pMain = lastMain;
+                final String pSub = lastSub;
+                lastMain = newMain;
+                lastSub = newSub;
                 ui.post(() -> {
                     int lines = enLines();
                     if (prevEnView != null) {
-                        prevEnView.setVisibility(pEn.isEmpty() ? View.GONE : View.VISIBLE);
-                        setFittedText(prevEnView, pEn, 46f, 24f, lines);
+                        prevEnView.setVisibility(pMain.isEmpty() ? View.GONE : View.VISIBLE);
+                        setFittedText(prevEnView, pMain, 46f, 24f, lines);
                     }
                     if (prevZhView != null) {
-                        prevZhView.setVisibility(pZh.isEmpty() ? View.GONE : View.VISIBLE);
-                        setFittedText(prevZhView, pZh, 21f, 13f, lines);
+                        prevZhView.setVisibility(pSub.isEmpty() ? View.GONE : View.VISIBLE);
+                        setFittedText(prevZhView, pSub, 21f, 13f, lines);
                     }
-                    setFittedText(enView, lastEn, 46f, 24f, lines);
-                    setFittedText(zhView, lastZh, 21f, 13f, lines);
+                    setFittedText(enView, lastMain, 46f, 24f, lines);
+                    setFittedText(zhView, lastSub, 21f, 13f, lines);
                 });
             }
         } catch (Throwable t) {

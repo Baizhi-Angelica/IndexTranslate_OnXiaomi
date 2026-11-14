@@ -14,7 +14,7 @@ Rendered as a full-screen white overlay above other apps.
 
 - **Fully local** — audio never leaves RAM: no files, no network
 - **Real time** — English appears ~3–7 s after a Chinese sentence ends (CPU limit of a 2B model)
-- **Bilingual** — English 46sp + Chinese 21sp; the **previous sentence keeps the same style** and can wrap to its own lines
+- **Bidirectional** — zh→en and en→zh chosen automatically; 46sp translation + 21sp transcript, the **previous sentence keeps the same style** and can wrap to its own lines
 - **Pure white / black** — `#FFFFFF` background, `#000000` text, readable from ~5 m
 - **True overlay** — `TYPE_APPLICATION_OVERLAY`, floats above other apps, with Hide / Exit buttons
 - **No root needed** — day-to-day use is one command in Termux
@@ -24,7 +24,7 @@ Rendered as a full-screen white overlay above other apps.
 
 ### 1. Install the APK
 
-Download [`release/ITX-Subtitle-1.1.apk`](release/ITX-Subtitle-1.1.apk) and install it.
+Download [`release/ITX-Subtitle-1.2.apk`](release/ITX-Subtitle-1.2.apk) and install it.
 
 Grant two permissions (on MIUI **both** are required, otherwise the microphone silently returns zeros):
 
@@ -110,7 +110,7 @@ microphone 16 kHz mono
 ├─ README.en.md              this file
 ├─ docs/deploy.md            zero-to-running guide + 17 pitfalls
 ├─ itx/                      bridge, start/stop scripts, Android app sources
-├─ release/ITX-Subtitle-1.1.apk
+├─ release/ITX-Subtitle-1.2.apk
 ├─ tools/                    build / install / SSH helper scripts
 └─ config/phone.env.example  connection template (real phone.env is git-ignored)
 ```
@@ -127,9 +127,9 @@ microphone 16 kHz mono
 
 ## Limitations
 
-- **Chinese → English only.** index-echo natively translates zh speech into en/ja/es text.
-  English speech is recognised but shows no Chinese translation; a separate small MT model
-  (~84 MB, e.g. Opus-MT en-zh GGUF) would be needed for real bidirectional translation.
+- **Bidirectional (zh ⇄ en).** `--target-lang` only exposes en/ja/es, so the bridge instead
+  rewrites the model instruction (`BIDIR_ASK`) to translate into *the other* language:
+  Chinese speech → English big / Chinese small, English speech → Chinese big / English small.
 - Sentences longer than 5 s are split into two subtitle entries.
 - In very quiet rooms ambient noise can trigger a segment that transcribes to nothing (returns fast).
 - Status-bar icons cannot be covered by third-party overlays (system restriction).

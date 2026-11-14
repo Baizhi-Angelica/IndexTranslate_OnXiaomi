@@ -242,12 +242,17 @@ tail -f ~/itx/live.log # 看实时日志
 
 ---
 
-## 9. 语言方向
+## 9. 语言方向（双向）
 
-index-echo-2b 原生只支持 **中文语音 → 英/日/西文本**：
+`--target-lang` 只暴露 en/ja/es，但 index-echo 是按指令输出的音频大模型，`--ask` 可整体改写指令。
+`live.py` 默认用下面这条"翻成另一种语言"的指令，实现**中 ⇄ 英 自动双向**：
 
-- 说中文：英文大字 + 中文小字 ✅
-- 说英文：能识别英文，但**没有中文对照**（模型不会英→中）
+```
+For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp,
+the transcript, then the translation into the other language
+(Chinese speech -> English; English speech -> Chinese).
+```
 
-要做真正的双向互译，需要再补一个英→中的小翻译模型（如 Opus-MT en-zh GGUF，约 84 MB），
-由 `live.py` 在检测到英文输入时调用。
+- 说中文 → 英文大字 + 中文小字
+- 说英文 → 中文大字 + 英文小字
+- 想固定单向：`export ITX_ASK='For each sentence, output three lines: ... English translation.'`

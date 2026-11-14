@@ -31,6 +31,16 @@ FRAME = 1600  # 100 ms
 THREADS = os.environ.get("ITX_THREADS", "7")
 SERVER_PORT = 8899
 
+# index-echo's --target-lang only accepts en/ja/es, but --ask replaces the whole
+# instruction, and the model happily translates into the "other" language.
+# That gives us zh->en AND en->zh with one model and one server.
+BIDIR_ASK = (
+    "For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp, "
+    "the transcript, then the translation into the other language "
+    "(Chinese speech -> English; English speech -> Chinese)."
+)
+ASK = os.environ.get("ITX_ASK", BIDIR_ASK)
+
 # VAD tuning (16-bit samples)
 ABS_MIN_RMS = float(os.environ.get("ITX_VAD_MIN", "110"))
 NOISE_RATIO = 2.2
@@ -106,7 +116,7 @@ class Engine:
         errlog = open(os.path.expanduser("~/itx/engine.log"), "ab")
         self.proc = subprocess.Popen(
             [CRISPASR, "--server", "-m", MODEL, "--backend", "index-echo",
-             "--target-lang", "en", "-t", THREADS,
+             "--target-lang", "en", "--ask", ASK, "-t", THREADS,
              "--host", "127.0.0.1", "--port", str(SERVER_PORT), "--no-warmup"],
             cwd=MODEL_DIR, stdout=errlog, stderr=errlog,
         )
@@ -169,6 +179,14 @@ def _is_cjk(ch):
     return ("\u4e00" <= ch <= "\u9fff") or ch in "\u3002\uff0c\uff01\uff1f\u3001\uff1a\uff1b\u201c\u201d\u2026"
 
 
+def _is_han(ch):
+    return "\u4e00" <= ch <= "\u9fff"
+
+
+def _has_letters(s):
+    return any(_is_han(c) or c.isalpha() for c in s)
+
+
 def explode_line(line):
     """Split a line into CJK / non-CJK runs so mixed lines become separate pieces."""
     pieces = []
@@ -192,27 +210,64 @@ def explode_line(line):
     return [p for p in pieces if p]
 
 
-def split_pairs(text):
-    """Pair the model's Chinese source lines with their English translations."""
+def segment_pairs(text):
+    """One subtitle cue -> (main, sub). Line 0 is the transcript, the rest is the translation."""
     lines = []
     for ln in (text or "").splitlines():
-        lines.extend(explode_line(ln))
+        for piece in explode_line(ln):
+            if _has_letters(piece):
+                lines.append(piece)
+    if not lines:
+        return []
+    if len(lines) == 1:
+        return [(lines[0], "")]
+    transcript = lines[0]
+    translation = " ".join(lines[1:]).strip()
+    return [(translation, transcript)]
+
+
+def split_pairs(text):
+    """Fallback when the server returns no segments: group by script, pair in order."""
+    lines = []
+    for ln in (text or "").splitlines():
+        for piece in explode_line(ln):
+            if _has_letters(piece):
+                lines.append(piece)
+    if not lines:
+        return []
+
+    indexed = list(enumerate(lines))
+    han_idx = [(i, x) for i, x in indexed if any(_is_han(c) for c in x)]
+    lat_idx = [(i, x) for i, x in indexed if not any(_is_han(c) for c in x)]
+
+    def drop_stray(items):
+        """A short line followed by a much longer one is usually leftover context."""
+        out = []
+        for k, (i, x) in enumerate(items):
+            if len(x) < 15 and any(len(y) >= 20 for _, y in items[k + 1:]):
+                continue
+            out.append((i, x))
+        return out
+
+    han_idx = drop_stray(han_idx)
+    lat_idx = drop_stray(lat_idx)
+    if not han_idx and not lat_idx:
+        return []
+
+    zh_first = bool(han_idx) and (not lat_idx or han_idx[0][0] < lat_idx[0][0])
+    han = [x for _, x in han_idx]
+    lat = [x for _, x in lat_idx]
 
     pairs = []
-    cur_zh = None
-    for line in lines:
-        if _is_cjk(line[0]):
-            if cur_zh is not None:
-                pairs.append((cur_zh, ""))
-            cur_zh = line
+    for i in range(max(len(han), len(lat))):
+        z = han[i] if i < len(han) else ""
+        e = lat[i] if i < len(lat) else ""
+        if not z:
+            pairs.append((e, ""))
+        elif not e:
+            pairs.append((z, ""))
         else:
-            if cur_zh is None:
-                pairs.append(("", line))
-            else:
-                pairs.append((cur_zh, line))
-                cur_zh = None
-    if cur_zh is not None:
-        pairs.append((cur_zh, ""))
+            pairs.append((e, z) if zh_first else (z, e))
     return pairs
 
 
@@ -328,10 +383,16 @@ class Worker(threading.Thread):
                 self.sink.send({"state": "error", "detail": str(e)[:80]})
                 continue
             text = res.get("text", "")
-            pairs = split_pairs(text)
-            log(f"seg {dur:.1f}s -> {time.time()-t0:.1f}s, {len(pairs)} pair(s)")
-            for zh, en in pairs:
-                self.sink.send({"zh": zh, "en": en})
+            segments = res.get("segments") or []
+            if segments:
+                pairs = []
+                for seg in segments:
+                    pairs.extend(segment_pairs(seg.get("text", "")))
+            else:
+                pairs = split_pairs(text)
+            log(f"seg {dur:.1f}s -> {time.time()-t0:.1f}s, {len(segments)} cues, {len(pairs)} pair(s)")
+            for main, sub in pairs:
+                self.sink.send({"main": main, "sub": sub})
                 time.sleep(0.15)
 
 

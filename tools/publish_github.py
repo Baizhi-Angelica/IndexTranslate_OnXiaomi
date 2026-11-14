@@ -23,14 +23,14 @@ DESCRIPTION = (
     "Fully offline real-time Chinese→English subtitle overlay for Android "
     "(Termux + CrispASR + Index-Echo-2B). 小米15 本地实时中英字幕悬浮窗。"
 )
-APK = ROOT / "release" / "ITX-Subtitle-1.1.apk"
-TAG = "v1.1"
-RELEASE_TITLE = "v1.1 — 上一句同样式 / same style for the previous line"
+APK = ROOT / "release" / "ITX-Subtitle-1.2.apk"
+TAG = "v1.2"
+RELEASE_TITLE = "v1.2 — 中英双向互译 / bilingual zh<->en"
 RELEASE_BODY = """## 中文
 
 小米 15（Android 16 / HyperOS）上验证通过的**本地实时中英字幕悬浮窗**。
 
-- 中文语音 → 英文大字 + 中文小字；上一句与当前句同样式，长句可各自换行
+- 中英双向：说中文出英文大字+中文小字，说英文出中文大字+英文小字\n- 上一句与当前句同样式，长句可各自换行
 - 全屏纯白悬浮窗，浮于其他 App 之上，无需 root
 - 模型 index-echo-2b Q8 常驻手机，全程离线
 - 一句说完约 3–7 秒出字（2B 模型 CPU 推理上限）
@@ -43,7 +43,7 @@ RELEASE_BODY = """## 中文
 
 ## English
 
-Offline, on-device real-time Chinese→English subtitle overlay verified on Xiaomi 15
+Offline, on-device real-time zh<->en subtitle overlay verified on Xiaomi 15
 (Android 16 / HyperOS). Chinese speech → large English text + small Chinese reference line,
 previous sentence keeps the same style, full-screen white overlay above other apps, no root required.
 
