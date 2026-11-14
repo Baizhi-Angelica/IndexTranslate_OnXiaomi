@@ -255,7 +255,7 @@ public class SubtitleService extends Service {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.WHITE);
-        root.setPadding(dp(20), dp(8), dp(20), dp(6));
+        root.setPadding(dp(20), dp(42), dp(20), dp(6));
 
         // ---- guide (shown until the Termux engine connects) ----
         guideBox = new LinearLayout(this);
@@ -325,24 +325,26 @@ public class SubtitleService extends Service {
         subtitleBox.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // previous sentence: same style as the current one (only its position tells the order)
         prevEnView = new TextView(this);
-        prevEnView.setTextColor(Color.rgb(90, 90, 90));
-        prevEnView.setTextSize(24f);
+        prevEnView.setTextColor(Color.BLACK);
+        prevEnView.setTextSize(46f);
+        prevEnView.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
         prevEnView.setGravity(Gravity.CENTER);
         prevEnView.setMaxLines(2);
         LinearLayout.LayoutParams prevEnLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        prevEnLp.bottomMargin = dp(8);
+        prevEnLp.bottomMargin = dp(6);
         subtitleBox.addView(prevEnView, prevEnLp);
 
         prevZhView = new TextView(this);
-        prevZhView.setTextColor(Color.rgb(140, 140, 140));
-        prevZhView.setTextSize(14f);
+        prevZhView.setTextColor(Color.BLACK);
+        prevZhView.setTextSize(21f);
         prevZhView.setGravity(Gravity.CENTER);
-        prevZhView.setMaxLines(1);
+        prevZhView.setMaxLines(2);
         LinearLayout.LayoutParams prevZhLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        prevZhLp.bottomMargin = dp(14);
+        prevZhLp.bottomMargin = dp(18);
         subtitleBox.addView(prevZhView, prevZhLp);
 
         enView = new TextView(this);
@@ -350,7 +352,7 @@ public class SubtitleService extends Service {
         enView.setTextSize(46f);
         enView.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
         enView.setGravity(Gravity.CENTER);
-        enView.setMaxLines(3);
+        enView.setMaxLines(2);
         subtitleBox.addView(enView, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
@@ -358,7 +360,7 @@ public class SubtitleService extends Service {
         zhView.setTextColor(Color.BLACK);
         zhView.setTextSize(21f);
         zhView.setGravity(Gravity.CENTER);
-        zhView.setMaxLines(3);
+        zhView.setMaxLines(2);
         LinearLayout.LayoutParams zhLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         zhLp.topMargin = dp(12);
@@ -426,8 +428,43 @@ public class SubtitleService extends Service {
         b.setLayoutParams(new LinearLayout.LayoutParams(w, h));
     }
 
-    private void copyToClipboard(String text) {
-        try {
+    /** Shrink the text (down to minSp) instead of clipping when it needs more than maxLines. */
+    private void setFittedText(TextView tv, String text, float maxSp, float minSp, int maxLines) {
+        if (tv == null) {
+            return;
+        }
+        tv.setMaxLines(maxLines);
+        tv.setText(text);
+        tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, maxSp);
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+        tv.post(() -> {
+            int w = tv.getWidth();
+            if (w <= 0) {
+                return;
+            }
+            int hSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            int wSpec = View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY);
+            float s = maxSp;
+            while (s > minSp) {
+                tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, s);
+                tv.measure(wSpec, hSpec);
+                android.text.Layout l = tv.getLayout();
+                if (l == null || l.getLineCount() <= maxLines) {
+                    break;
+                }
+                s -= 1f;
+            }
+        });
+    }
+
+    private int enLines() {
+        return getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE ? 2 : 3;
+    }
+
+    private void copyToClipboard(String text) {        try {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             cm.setPrimaryClip(ClipData.newPlainText("itx command", text));
         } catch (Throwable t) {
@@ -545,20 +582,17 @@ public class SubtitleService extends Service {
                 lastEn = newEn;
                 lastZh = newZh;
                 ui.post(() -> {
+                    int lines = enLines();
                     if (prevEnView != null) {
-                        prevEnView.setText(pEn);
                         prevEnView.setVisibility(pEn.isEmpty() ? View.GONE : View.VISIBLE);
+                        setFittedText(prevEnView, pEn, 46f, 24f, lines);
                     }
                     if (prevZhView != null) {
-                        prevZhView.setText(pZh);
                         prevZhView.setVisibility(pZh.isEmpty() ? View.GONE : View.VISIBLE);
+                        setFittedText(prevZhView, pZh, 21f, 13f, lines);
                     }
-                    if (enView != null) {
-                        enView.setText(lastEn);
-                    }
-                    if (zhView != null) {
-                        zhView.setText(lastZh);
-                    }
+                    setFittedText(enView, lastEn, 46f, 24f, lines);
+                    setFittedText(zhView, lastZh, 21f, 13f, lines);
                 });
             }
         } catch (Throwable t) {

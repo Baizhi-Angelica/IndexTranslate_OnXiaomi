@@ -14,7 +14,7 @@ Rendered as a full-screen white overlay above other apps.
 
 - **Fully local** — audio never leaves RAM: no files, no network
 - **Real time** — English appears ~3–7 s after a Chinese sentence ends (CPU limit of a 2B model)
-- **Bilingual** — English 46sp + Chinese 21sp, plus the **previous sentence** in grey above
+- **Bilingual** — English 46sp + Chinese 21sp; the **previous sentence keeps the same style** and can wrap to its own lines
 - **Pure white / black** — `#FFFFFF` background, `#000000` text, readable from ~5 m
 - **True overlay** — `TYPE_APPLICATION_OVERLAY`, floats above other apps, with Hide / Exit buttons
 - **No root needed** — day-to-day use is one command in Termux
@@ -24,7 +24,7 @@ Rendered as a full-screen white overlay above other apps.
 
 ### 1. Install the APK
 
-Download [`release/ITX-Subtitle-1.0.apk`](release/ITX-Subtitle-1.0.apk) and install it.
+Download [`release/ITX-Subtitle-1.1.apk`](release/ITX-Subtitle-1.1.apk) and install it.
 
 Grant two permissions (on MIUI **both** are required, otherwise the microphone silently returns zeros):
 
@@ -89,7 +89,7 @@ microphone 16 kHz mono
 ├─ README.en.md              this file
 ├─ docs/deploy.md            zero-to-running guide + 17 pitfalls
 ├─ itx/                      bridge, start/stop scripts, Android app sources
-├─ release/ITX-Subtitle-1.0.apk
+├─ release/ITX-Subtitle-1.1.apk
 ├─ tools/                    build / install / SSH helper scripts
 └─ config/phone.env.example  connection template (real phone.env is git-ignored)
 ```
