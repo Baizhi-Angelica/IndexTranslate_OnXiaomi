@@ -209,7 +209,7 @@ bash ~/itx/start.sh
 脚本会：启动 `live.py` → 拉起 `crispasr --server` → 等模型就绪（约 5 秒）→
 自动 `am start` 打开「ITX 字幕」App → 悬浮窗直接进入字幕模式（状态「● 聆听中」）。
 
-说话 → 3–7 秒后出英文大字 + 中文小字。用完点悬浮窗「退出」→「关闭」。
+说话 → 约 2.5–4 秒后出英文大字 + 中文小字（5 秒语音段）。用完点悬浮窗「退出」→「关闭」。
 
 ```bash
 bash ~/itx/stop.sh     # 兜底停止 + 释放内存
@@ -235,24 +235,32 @@ tail -f ~/itx/live.log # 看实时日志
 | 11 | 引擎莫名退出 | 12 秒无客户端看门狗把端口探测连接当成"App 已断开" | 忽略 3 秒内的瞬时连接，超时放宽到 30 秒 |
 | 12 | App 一直停在"等待 Termux" | 重写 Manifest 时**漏了 `INTERNET` 权限**，连接 127.0.0.1 直接失败 | 补回 `INTERNET` |
 | 13 | 隐藏后再打开回到引导页 | 重建悬浮窗时没恢复 `connected` 状态 | 创建后调 `applyConnectedUi(connected)` |
-| 14 | 模型偶尔把中英混在一行 | index-echo 输出格式不稳定 | `live.py` 按 CJK/拉丁字符集拆行再配对 |
+| 14 | 模型把译文和原文顺序颠倒 / 中英混在一行 | index-echo 的输出格式不完全稳定 | `live.py` 按**行序**解析（第 1 行转写、其余译文），并清理时间戳、重复行 |
 | 15 | `am start` 弹"Termux 想要打开 ITX 字幕" | MIUI 的后台启动拦截 | 首次点"始终允许"，或由 `start.sh` 触发（可控） |
 | 16 | 电脑端 `curl github.com` 全失败 | 电脑没有代理/没有外网 | 所有下载都通过手机 `7890` 代理完成 |
 | 17 | `adb` 没有、`ssh 8022` 连不上 | Termux 的 sshd 未启动 | `sshd`，端口 8022，用户名是 `u0_aXXX` |
+| 18 | 引擎重启后 App 录音全是 0 | MIUI 会把同一进程里 stop/release 后重新打开的 `AudioRecord` 永久静音（logcat：`AudioRecordImpl: [audioRecordData][mute]`） | App 保持录音对象、断开时继续 `read` 丢弃并重连；`stop.sh` 用 force-stop 关 App 才真正释放麦克风 |
+| 19 | 引擎断开时 App 空转抢 CPU | 旧版麦克风线程在无连接时反复重连/重开录音，实测 62% CPU、发热降频 | 同上：保持录音 + 有节奏地重连，断开时 CPU 约 3.5% |
 
 ---
 
 ## 9. 语言方向（双向）
 
 `--target-lang` 只暴露 en/ja/es，但 index-echo 是按指令输出的音频大模型，`--ask` 可整体改写指令。
-`live.py` 默认用下面这条"翻成另一种语言"的指令，实现**中 ⇄ 英 自动双向**：
+
+**关键：不要让模型自己判断"这是中文还是英文"。** 实测它会把一部分中文听成英文，然后执行"中文→中文"，把同一句原样输出两遍——61 条真实字幕里有 26 条没有译文，而且是否触发跟说话人音色有关。现在的指令把译文方向**锚定在转写出来的文字**上：
 
 ```
-For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp,
-the transcript, then the translation into the other language
-(Chinese speech -> English; English speech -> Chinese).
+Output exactly two lines for each sentence, with no timestamps.
+Line 1: the transcript in the language actually spoken.
+Line 2: the translation into the other language. If line 1 contains Chinese
+characters, line 2 must be English. If line 1 is fully English, line 2 must be
+Chinese. Never repeat line 1 as line 2.
 ```
 
 - 说中文 → 英文大字 + 中文小字
 - 说英文 → 中文大字 + 英文小字
-- 想固定单向：`export ITX_ASK='For each sentence, output three lines: ... English translation.'`
+- 模型先写第 1 行，再按"第 1 行有没有汉字"决定第 2 行，绕开了它对音频语种的误判；回归集 35 条只剩 1 条 0.3 秒的"嗯。"没译文
+- 想固定单向：`export ITX_ASK='For each sentence, output the transcript, then the English translation.'`
+
+相关文件：`live.py` 的 `BIDIR_ASK`、`order_pairs()`（按行序配对，不按字符集猜角色）。

@@ -17,5 +17,9 @@ PY
 sleep 1
 pkill -f 'itx/live.py' 2>/dev/null
 pkill -f 'crispasr --server' 2>/dev/null
+# 引擎停了 App 还会抱着麦克风重连（实测空转 60% CPU、发热降频），一并停掉
+if command -v su >/dev/null 2>&1; then
+  su -c 'am force-stop com.itx.overlay' >/dev/null 2>&1 || true
+fi
 rm -f "$ITX/rotation.saved"
 echo "已停止（模型内存已释放）"

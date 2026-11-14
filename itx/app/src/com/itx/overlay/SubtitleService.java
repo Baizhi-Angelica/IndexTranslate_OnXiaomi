@@ -674,12 +674,18 @@ public class SubtitleService extends Service {
     private void audioLoop() {
         byte[] buf = new byte[3200];
         while (running) {
-            if (recorder == null && !openRecorder()) {
-                setStatus("● 无法打开麦克风");
-                sleep(2000);
-                continue;
-            }
+            // MIUI mutes every AudioRecord that is stopped/released and reopened
+            // inside the same process (all frames come back zero forever), so the
+            // recorder is opened once — after the engine connects — and kept
+            // alive. While the engine is away we still drain it (a 100 ms read is
+            // a natural sleep) so the HAL buffer never backs up into a busy loop.
             if (pcmOut == null) {
+                if (recorder != null) {
+                    try {
+                        recorder.read(buf, 0, buf.length);
+                    } catch (Throwable ignored) {
+                    }
+                }
                 try {
                     Socket s = new Socket();
                     s.connect(new InetSocketAddress("127.0.0.1", PCM_PORT), 800);
@@ -687,9 +693,14 @@ public class SubtitleService extends Service {
                     pcmSock = s;
                     pcmOut = s.getOutputStream();
                 } catch (Throwable t) {
-                    sleep(800);
+                    sleep(200);
                     continue;
                 }
+            }
+            if (recorder == null && !openRecorder()) {
+                setStatus("● 无法打开麦克风");
+                sleep(2000);
+                continue;
             }
             int n;
             try {
@@ -708,6 +719,7 @@ public class SubtitleService extends Service {
                 closeQuietly(pcmSock);
                 pcmSock = null;
                 pcmOut = null;
+                sleep(150);
             }
         }
     }
@@ -716,6 +728,7 @@ public class SubtitleService extends Service {
         AudioRecord r = recorder;
         recorder = null;
         if (r != null) {
+            Log.i(TAG, "recorder released");
             try {
                 r.stop();
             } catch (Throwable ignored) {

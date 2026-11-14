@@ -12,6 +12,7 @@ import io
 import json
 import os
 import queue
+import re
 import socket
 import subprocess
 import sys
@@ -34,10 +35,20 @@ SERVER_PORT = 8899
 # index-echo's --target-lang only accepts en/ja/es, but --ask replaces the whole
 # instruction, and the model happily translates into the "other" language.
 # That gives us zh->en AND en->zh with one model and one server.
+#
+# The rule is anchored on the *transcript*, not on the model's audio-language
+# guess. "The other language" leaves it free to decide that Chinese speech is
+# English and then "translate" Chinese into Chinese (the repeated-line failure);
+# in one logged session 26 of 61 cues came back Chinese-only, and the trigger
+# depended on the speaker's voice. Making line 2 conditional on the characters
+# in line 1 fixed every failure in a 35-clip TTS regression set except one
+# 0.3 s clip the model returns nothing for.
 BIDIR_ASK = (
-    "For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp, "
-    "the transcript, then the translation into the other language "
-    "(Chinese speech -> English; English speech -> Chinese)."
+    "Output exactly two lines for each sentence, with no timestamps.\n"
+    "Line 1: the transcript in the language actually spoken.\n"
+    "Line 2: the translation into the other language. If line 1 contains Chinese "
+    "characters, line 2 must be English. If line 1 is fully English, line 2 must be "
+    "Chinese. Never repeat line 1 as line 2."
 )
 ASK = os.environ.get("ITX_ASK", BIDIR_ASK)
 
@@ -48,6 +59,15 @@ SILENCE_MS = int(os.environ.get("ITX_SILENCE_MS", "550"))
 MIN_SPEECH_MS = 400
 MAX_SEG_MS = int(os.environ.get("ITX_MAX_SEG_MS", "5000"))
 PREROLL_MS = 300
+
+# Keep the newest speech only when the model falls behind: the queue is bounded
+# and overflowing drops the OLDEST pending segment (showing a 15 s old line is
+# worse than missing it). A segment that waited longer than ITX_STALE_S is
+# skipped too, so a burst can never delay live captions indefinitely.
+QUEUE_MAX = int(os.environ.get("ITX_QUEUE_MAX", "3"))
+STALE_S = float(os.environ.get("ITX_STALE_S", "20"))
+# Hard cap on generated tokens; a runaway decode otherwise costs tens of seconds.
+MAX_NEW_TOKENS = int(os.environ.get("ITX_MAX_TOKENS", "160"))
 
 log_lock = threading.Lock()
 
@@ -164,7 +184,12 @@ class Engine:
             'Content-Disposition: form-data; name="file"; filename="seg.wav"\r\n'
             "Content-Type: audio/wav\r\n\r\n"
         ).encode()
-        tail = f"\r\n--{boundary}--\r\n".encode()
+        tail = (
+            f"\r\n--{boundary}\r\n"
+            'Content-Disposition: form-data; name="max_tokens"\r\n\r\n'
+            f"{MAX_NEW_TOKENS}\r\n"
+            f"--{boundary}--\r\n"
+        ).encode()
         req = urllib.request.Request(
             f"http://127.0.0.1:{SERVER_PORT}/v1/audio/transcriptions",
             data=head + body + tail,
@@ -175,8 +200,7 @@ class Engine:
         return json.loads(raw.decode("utf-8"))
 
 
-def _is_cjk(ch):
-    return ("\u4e00" <= ch <= "\u9fff") or ch in "\u3002\uff0c\uff01\uff1f\u3001\uff1a\uff1b\u201c\u201d\u2026"
+TIMESTAMP_RE = re.compile(r"^\s*\[\d{1,2}:\d{2}(?:\.\d{1,2})?-\d{1,2}:\d{2}(?:\.\d{1,2})?\]\s*")
 
 
 def _is_han(ch):
@@ -184,91 +208,53 @@ def _is_han(ch):
 
 
 def _has_letters(s):
-    return any(_is_han(c) or c.isalpha() for c in s)
+    return any(_is_han(c) or (c.isalpha() and ord(c) < 128) for c in s)
 
 
-def explode_line(line):
-    """Split a line into CJK / non-CJK runs so mixed lines become separate pieces."""
-    pieces = []
-    cur = []
-    cur_cjk = None
-    for ch in line:
-        if ch.isspace():
-            if cur:
-                cur.append(ch)
+def _script(s):
+    """'zh' when Han characters dominate, 'en' for a Latin line, '?' otherwise."""
+    han = sum(1 for c in s if _is_han(c))
+    lat = sum(1 for c in s if c.isalpha() and ord(c) < 128)
+    if han and han >= lat:
+        return "zh"
+    if lat:
+        return "en"
+    return "?"
+
+
+def clean_lines(text):
+    """Drop timestamps/blank lines and collapse the model's repeated line."""
+    out = []
+    for raw in (text or "").splitlines():
+        ln = TIMESTAMP_RE.sub("", raw).strip()
+        if not ln or not _has_letters(ln):
             continue
-        is_cjk = _is_cjk(ch)
-        if cur_cjk is None or is_cjk == cur_cjk:
-            cur.append(ch)
-            cur_cjk = is_cjk
-        else:
-            pieces.append("".join(cur).strip())
-            cur = [ch]
-            cur_cjk = is_cjk
-    if cur:
-        pieces.append("".join(cur).strip())
-    return [p for p in pieces if p]
+        if out and out[-1] == ln:
+            continue
+        out.append(ln)
+    return out
 
 
-def segment_pairs(text):
-    """One subtitle cue -> (main, sub). Line 0 is the transcript, the rest is the translation."""
-    lines = []
-    for ln in (text or "").splitlines():
-        for piece in explode_line(ln):
-            if _has_letters(piece):
-                lines.append(piece)
+def order_pairs(text):
+    """One cue -> (main, sub).
+
+    The prompt fixes the order -- line 1 is the transcript, the rest is its
+    translation -- so the script of the words is not used to guess roles (the
+    old code paired by script and could show the transcript as the translation).
+    Several transcript/translation sentences in one cue are paired alternately.
+    """
+    lines = clean_lines(text)
     if not lines:
         return []
     if len(lines) == 1:
         return [(lines[0], "")]
-    transcript = lines[0]
-    translation = " ".join(lines[1:]).strip()
-    return [(translation, transcript)]
-
-
-def split_pairs(text):
-    """Fallback when the server returns no segments: group by script, pair in order."""
-    lines = []
-    for ln in (text or "").splitlines():
-        for piece in explode_line(ln):
-            if _has_letters(piece):
-                lines.append(piece)
-    if not lines:
-        return []
-
-    indexed = list(enumerate(lines))
-    han_idx = [(i, x) for i, x in indexed if any(_is_han(c) for c in x)]
-    lat_idx = [(i, x) for i, x in indexed if not any(_is_han(c) for c in x)]
-
-    def drop_stray(items):
-        """A short line followed by a much longer one is usually leftover context."""
-        out = []
-        for k, (i, x) in enumerate(items):
-            if len(x) < 15 and any(len(y) >= 20 for _, y in items[k + 1:]):
-                continue
-            out.append((i, x))
-        return out
-
-    han_idx = drop_stray(han_idx)
-    lat_idx = drop_stray(lat_idx)
-    if not han_idx and not lat_idx:
-        return []
-
-    zh_first = bool(han_idx) and (not lat_idx or han_idx[0][0] < lat_idx[0][0])
-    han = [x for _, x in han_idx]
-    lat = [x for _, x in lat_idx]
-
-    pairs = []
-    for i in range(max(len(han), len(lat))):
-        z = han[i] if i < len(han) else ""
-        e = lat[i] if i < len(lat) else ""
-        if not z:
-            pairs.append((e, ""))
-        elif not e:
-            pairs.append((z, ""))
-        else:
-            pairs.append((e, z) if zh_first else (z, e))
-    return pairs
+    scripts = [_script(ln) for ln in lines]
+    alternating = len(lines) % 2 == 0 and all(
+        scripts[i] != scripts[i + 1] for i in range(0, len(lines), 2)
+    )
+    if alternating:
+        return [(lines[i + 1], lines[i]) for i in range(0, len(lines), 2)]
+    return [(" ".join(lines[1:]), lines[0])]
 
 
 def wav_rms(frame_bytes):
@@ -361,20 +347,42 @@ class Worker(threading.Thread):
         super().__init__(daemon=True)
         self.engine = engine
         self.sink = sink
-        self.q = queue.Queue(maxsize=8)
+        self.q = queue.Queue(maxsize=QUEUE_MAX)
+        self.dropped = 0
 
     def submit(self, seg):
+        """Enqueue with newest-first priority: when full, throw the OLDEST away."""
+        item = (time.time(), seg)
         try:
-            self.q.put_nowait(seg)
+            self.q.put_nowait(item)
+            return
         except queue.Full:
-            log("queue full, dropping segment")
+            pass
+        try:
+            old_t, old = self.q.get_nowait()
+            self.dropped += 1
+            log(f"queue full: drop oldest {len(old)/(SR*2):.1f}s "
+                f"(age {time.time()-old_t:.1f}s, total dropped {self.dropped})")
+        except queue.Empty:
+            pass
+        try:
+            self.q.put_nowait(item)
+        except queue.Full:  # consumer raced us; keep the newest
+            log("queue still full, dropping new segment")
 
     def run(self):
         while True:
-            seg = self.q.get()
-            if seg is None:
+            item = self.q.get()
+            if item is None:
                 return
+            stamp, seg = item
+            age = time.time() - stamp
             dur = len(seg) / (SR * 2)
+            if age > STALE_S:
+                self.dropped += 1
+                log(f"drop stale segment: {dur:.1f}s waited {age:.1f}s "
+                    f"(total dropped {self.dropped})")
+                continue
             t0 = time.time()
             try:
                 res = self.engine.transcribe(seg)
@@ -386,11 +394,14 @@ class Worker(threading.Thread):
             segments = res.get("segments") or []
             if segments:
                 pairs = []
-                for seg in segments:
-                    pairs.extend(segment_pairs(seg.get("text", "")))
+                for item in segments:
+                    pairs.extend(order_pairs(item.get("text", "")))
             else:
-                pairs = split_pairs(text)
-            log(f"seg {dur:.1f}s -> {time.time()-t0:.1f}s, {len(segments)} cues, {len(pairs)} pair(s)")
+                pairs = order_pairs(text)
+            log(f"seg {dur:.1f}s -> {time.time()-t0:.1f}s, {len(segments)} cues, {len(pairs)} pair(s)"
+                f" (queued {self.q.qsize()})")
+            if not pairs or not any(sub for _, sub in pairs):
+                log("raw:", (text or "").replace("\n", " | ")[:160])
             for main, sub in pairs:
                 self.sink.send({"main": main, "sub": sub})
                 time.sleep(0.15)

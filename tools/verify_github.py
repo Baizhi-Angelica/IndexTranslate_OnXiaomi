@@ -27,7 +27,7 @@ print("files:", len(paths))
 for p in paths:
     print("  ", p)
 
-rel = api(f"/repos/{OWNER}/{NAME}/releases/tags/v1.0")
+rel = api(f"/repos/{OWNER}/{NAME}/releases/tags/v1.3")
 print("release:", rel["tag_name"], "|", rel["name"][:50])
 for a in rel["assets"]:
     print("  asset:", a["name"], a["size"], "bytes")

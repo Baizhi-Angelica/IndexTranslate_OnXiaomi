@@ -23,32 +23,45 @@ DESCRIPTION = (
     "Fully offline real-time Chinese→English subtitle overlay for Android "
     "(Termux + CrispASR + Index-Echo-2B). 小米15 本地实时中英字幕悬浮窗。"
 )
-APK = ROOT / "release" / "ITX-Subtitle-1.2.apk"
-TAG = "v1.2"
-RELEASE_TITLE = "v1.2 — 中英双向互译 / bilingual zh<->en"
+APK = ROOT / "release" / "ITX-Subtitle-1.3.apk"
+TAG = "v1.3"
+RELEASE_TITLE = "v1.3 — 中文不再被误判成英文 / code-switch fix"
 RELEASE_BODY = """## 中文
 
 小米 15（Android 16 / HyperOS）上验证通过的**本地实时中英字幕悬浮窗**。
 
-- 中英双向：说中文出英文大字+中文小字，说英文出中文大字+英文小字\n- 上一句与当前句同样式，长句可各自换行
-- 全屏纯白悬浮窗，浮于其他 App 之上，无需 root
-- 模型 index-echo-2b Q8 常驻手机，全程离线
-- 一句说完约 3–7 秒出字（2B 模型 CPU 推理上限）
+本版修复：
 
-**安装**：下载 `ITX-Subtitle-1.0.apk` 安装，然后按 [README](README.md) 授权两个权限
-（`SYSTEM_ALERT_WINDOW` 与 `RECORD_AUDIO` 的 appop，缺一不可），
-再按 [docs/deploy.md](docs/deploy.md) 在 Termux 里装好模型与 CrispASR。
+- **中文被误判成英文**：模型会先写转写、再按"第 1 行有没有汉字"决定译文方向，不再让模型自己猜语种。
+  实测 61 条真实字幕里 26 条没有译文，现在 35 条 TTS 回归只剩 1 条 0.3 秒的"嗯。"没译文，且与音色无关。
+- **持续说话优先显示最新一句**：模型追不上时队列只保留最新 3 段，满了丢最旧的，不会攒出十几秒前的字幕。
+- **单次输出上限 160 tokens**：防止解码跑飞拖几十秒。
+- **App 断连不再空转**：引擎断开时保持录音对象并低频率重连，CPU 从 62% 降到约 3.5%，
+  引擎重启后录音自动恢复；`stop.sh` 会 force-stop App，真正释放麦克风。
+
+**更新方式**：下载 `ITX-Subtitle-1.3.apk` 覆盖安装；引擎侧（`live.py` / `stop.sh`）重跑
+`bash ~/itx-src/tools/bootstrap_phone.sh` 即可（脚本幂等）。
 
 **使用**：`bash ~/itx/start.sh`（会自动拉起 App），点「退出」结束。
 
 ## English
 
 Offline, on-device real-time zh<->en subtitle overlay verified on Xiaomi 15
-(Android 16 / HyperOS). Chinese speech → large English text + small Chinese reference line,
-previous sentence keeps the same style, full-screen white overlay above other apps, no root required.
+(Android 16 / HyperOS).
 
-Install the APK, grant the two permissions described in the README, follow `docs/deploy.md`
-to set up Termux + model + CrispASR, then run `bash ~/itx/start.sh`.
+What changed in 1.3:
+
+- Translation direction is anchored on the transcript line ("Chinese characters
+  in line 1 -> line 2 must be English"), so Chinese speech is no longer
+  mistaken for English and left untranslated.
+- Under continuous speech the queue keeps only the newest three segments and
+  drops the oldest, so captions never trail tens of seconds behind.
+- A 160-token cap per request stops a runaway decode.
+- The overlay app no longer busy-spins when the engine dies (62% -> ~3.5% CPU)
+  and resumes recording automatically after the engine comes back.
+
+Install `ITX-Subtitle-1.3.apk`; re-run `bash ~/itx-src/tools/bootstrap_phone.sh`
+to update the Termux side, then `bash ~/itx/start.sh`.
 """
 
 
