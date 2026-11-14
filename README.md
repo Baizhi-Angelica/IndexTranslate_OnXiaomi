@@ -65,6 +65,27 @@ bash ~/itx/start.sh
 - 界面显示 `bash ~/itx/stop.sh` 作为兜底（已自动复制到剪贴板）；
 - 点「关闭」结束。
 
+## 给 AI Agent 的一键安装
+
+仓库自带面向自动化 agent 的说明与引导脚本，agent 可以直接代你完成部署：
+
+```
+AGENTS.md                  agent 必读的约束清单（改代码前看）
+docs/agent-install.md      给 agent 的完整部署剧本（含需要发给用户的提示语）
+tools/bootstrap_phone.sh   幂等的一键安装脚本
+```
+
+在手机的 Termux 里两条命令即可：
+
+```bash
+git clone https://github.com/Baizhi-Angelica/IndexTranslate_OnXiaomi.git ~/itx-src
+bash ~/itx-src/tools/bootstrap_phone.sh
+```
+
+脚本会依次：装系统包 → 装 `hf` → 下模型(2.6 GB) → 编 CrispASR → 编 APK → 装 APK → 授权 → 自检。
+没有 root 也能跑，脚本会在安装那步打印出手动授权步骤；需要用户配合的部分（装 Termux、设 SSH 密码、点权限开关）
+在 [docs/agent-install.md](docs/agent-install.md) 里都写成了可以直接复制发给用户的话术。
+
 ## 工作方式
 
 ```
@@ -77,7 +98,7 @@ bash ~/itx/start.sh
   crispasr --server（index-echo-2b Q8，常驻，7 线程）
       │      中文转写 + 英文翻译（逐句对照）
       ▼  TCP 127.0.0.1:17321（JSON 行）
-  悬浮窗 App（TextView：上一句灰色 / 这一句大字 / 中文小字）
+  悬浮窗 App（上一句与这一句同样式大字 / 中文小字）
 ```
 
 ## 项目结构

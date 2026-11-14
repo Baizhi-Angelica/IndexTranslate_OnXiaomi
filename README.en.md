@@ -66,6 +66,27 @@ Tap **Exit** on the overlay when done:
 The app tells the engine to quit over a local socket (freeing the model), shows
 `bash ~/itx/stop.sh` as a fallback (already copied to the clipboard), and closes on **Close**.
 
+## One-command install for AI agents
+
+The repo ships agent-facing docs and an idempotent installer:
+
+```
+AGENTS.md                  hard constraints an agent must preserve
+docs/agent-install.md      full deployment playbook (with prompts to send the user)
+tools/bootstrap_phone.sh   idempotent one-shot installer
+```
+
+On the phone, inside Termux:
+
+```bash
+git clone https://github.com/Baizhi-Angelica/IndexTranslate_OnXiaomi.git ~/itx-src
+bash ~/itx-src/tools/bootstrap_phone.sh
+```
+
+It installs packages, the `hf` CLI, the 2.6 GB models, builds CrispASR and the APK, installs it,
+grants permissions when root is available, and self-checks. Without root it prints the manual
+permission steps to hand to the user.
+
 ## Architecture
 
 ```
