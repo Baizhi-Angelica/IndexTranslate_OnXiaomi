@@ -1,0 +1,34 @@
+# ---------- secrets (never commit) ----------
+config/phone.env
+*.env
+!config/phone.env.example
+*.keystore
+*.jks
+*.pem
+*.key
+
+# ---------- build output ----------
+itx/app/build/
+build/
+*.apk.idsig
+*.dex
+*.class
+*.o
+
+# ---------- dev scratch ----------
+dev/
+__pycache__/
+*.pyc
+*.log
+itx/live.log
+itx/engine.out
+itx/last_seg.wav
+itx/rotation.saved
+*.local
+
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
