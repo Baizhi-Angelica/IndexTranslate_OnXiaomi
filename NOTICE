@@ -1,0 +1,14 @@
+IndexTranslate On Xiaomi 15
+Copyright 2026 Baizhi-Angelica
+
+This product includes software and models developed by third parties:
+
+- Index-Echo-S2TT-2B, Copyright Bilibili Index Team
+  Licensed under the Apache License, Version 2.0
+  https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B
+
+- CrispASR, Copyright CrispStrobe contributors
+  See https://github.com/CrispStrobe/CrispASR for its license terms
+
+- GGUF conversion: cstr/index-echo-2b-GGUF
+  https://huggingface.co/cstr/index-echo-2b-GGUF

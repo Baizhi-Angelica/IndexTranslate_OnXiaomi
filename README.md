@@ -1,33 +1,81 @@
-# IndexTranslate On Xiaomi 15
+<p align="center">
+  <img src="itx/h2.png" width="760" alt="IndexTranslate 悬浮窗效果">
+</p>
 
-在 Android 手机上跑**本地实时中英字幕**：中文语音 → 英文大字 + 中文小字对照，
-全屏纯白悬浮窗、悬浮于其他 App 之上，全程离线，不上传任何音频。
+<h1 align="center">IndexTranslate · 小米 15 本地实时中英字幕</h1>
 
-> 在 **小米 15（Android 16 / HyperOS）** 上完成并验证。整套推理跑在 Termux 里，
-> 模型是 B 站 [Index-Echo-S2TT-2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B)，
-> 运行时是 [CrispASR](https://github.com/CrispStrobe/CrispASR)。
+<p align="center">
+  <b>全离线 · 真悬浮窗 · 中英双向 · 无需 root</b><br>
+  <sub>小米 15 / Android 16 / HyperOS · Termux + CrispASR + Index-Echo-2B Q8</sub>
+</p>
 
-![字幕界面](itx/h2.png)
+<p align="center">
+  <a href="README.md">简体中文</a> ·
+  <a href="README.en.md">English</a>
+</p>
 
-## 特性
+<p align="center">
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Baizhi-Angelica/IndexTranslate_OnXiaomi?label=license&amp;color=blue"></a>
+  <a href="https://github.com/Baizhi-Angelica/IndexTranslate_OnXiaomi/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Baizhi-Angelica/IndexTranslate_OnXiaomi?label=release&amp;color=fb7299"></a>
+  <img alt="Platform" src="https://img.shields.io/badge/Android-16%20%2F%20HyperOS-3DDC84.svg">
+  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Termux%20%2B%20CrispASR-4E9A06.svg">
+  <img alt="Model" src="https://img.shields.io/badge/model-Index--Echo--2B%20Q8-FF6F00.svg">
+  <img alt="Offline" src="https://img.shields.io/badge/inference-100%25%20on--device-8A2BE2.svg">
+</p>
 
-- **纯本地**：音频只在内存里流转，不落盘、不上传网络
-- **实时**：一句中文说完后约 2.5–4 秒出英文字幕（5 秒语音段；2B 模型 CPU 推理的物理上限）
-- **双向互译**：中→英 / 英→中 自动判断；大字是译文、小字是原文，**上一句与当前句同样式**，各自可换行完整显示
-- **中英混说也不丢翻**：译文方向按转写文本判定，不靠模型猜语音语种；中文夹英文、语气像英文也不会整句不翻
-- **全屏白底黑字**：`#FFFFFF` / `#000000`，适合 5 米内观看
-- **真悬浮窗**：`TYPE_APPLICATION_OVERLAY`，盖在其他 App 之上，有「隐藏 / 退出」按钮
-- **无需 root**：日常使用只要在 Termux 里跑一条命令
-- **方向跟随系统**：不强制、不修改任何系统设置
+## 🎯 这是什么
 
-## 实时性与排队
+在 Android 手机上跑**本地实时中英字幕**：说话 → 屏幕上出现**大字译文 + 小字原文**，
+全屏纯白悬浮窗盖在任意 App 之上，全程离线，音频不落盘、不上传。
 
-- 单段最长 **5 秒**：再短会把一句话切碎、明显掉翻译质量；再长则字幕延迟变大。
-- 一段 5 秒语音大约 2.5–4 秒出字幕（2B / Q8 / 7 线程；编码约 0.8 s、预填充约 0.8 s、生成约 2.2 s）。
-- 持续说话、模型追不上时，桥接会**丢掉最旧的待处理片段**，优先保证最新一句话；队列默认 3 段，不会攒出十几秒前的字幕。
-- 可调环境变量：`ITX_QUEUE_MAX`（队列长度）、`ITX_STALE_S`（等待超过多少秒直接丢）、`ITX_MAX_TOKENS`（单次生成上限）。
+整套推理跑在 Termux 里：模型是 B 站 Index 团队的
+[Index-Echo-S2TT-2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B)，
+运行时是 [CrispASR](https://github.com/CrispStrobe/CrispASR)。
 
-## 快速开始
+> 最初是为下个月导师的小聚会做的：会来几位外国学生，一桌人聊天需要双语。
+> 手机横放在桌上就是一块字幕屏。
+
+## ✨ 特性
+
+| | |
+|---|---|
+| 🔒 **纯本地** | 音频只在内存里流转，不落盘、不联网，断网也能用 |
+| ⚡ **实时** | 一句说完约 2.5–4 秒出字幕（5 秒语音段，2B 模型 CPU 推理） |
+| ↔️ **双向互译** | 中文→英文、英文→中文自动切换；大字译文、小字原文 |
+| 🧩 **中英混说也不丢翻** | 译文方向按转写文本判定，不靠模型猜语种；夹英文、语气像英文也不会整句不翻 |
+| 🖥 **全屏白底黑字** | `#FFFFFF` / `#000000`，5 米内可读 |
+| 🪟 **真悬浮窗** | `TYPE_APPLICATION_OVERLAY`，盖在视频、会议、直播之上，带「隐藏 / 退出」 |
+| 🔓 **不需要 root** | 日常使用只要在 Termux 里一条 `start.sh` |
+| 🔄 **方向跟随系统** | 不强制、不修改任何系统设置 |
+
+## 🎬 效果
+
+<p align="center">
+  <img src="itx/guide.png" width="720" alt="启动引导">
+</p>
+
+<p align="center">
+  <img src="itx/exitp.png" width="720" alt="退出引导">
+</p>
+
+## ⚡ 性能（实测）
+
+4 秒语音、7 线程、Q8 模型、干净状态：
+
+| 阶段 | 耗时 | 说明 |
+|---|---:|---|
+| mel + 音频编码 | ~0.84 s | 约 0.21 s / 秒音频 |
+| 解码器预填充 | ~0.83 s | 音频 token + prompt |
+| 自回归生成 | ~2.18 s | 内存带宽瓶颈，占 ~56% |
+| **合计** | **~3.9 s** | 2 秒短句约 2.6–3.1 s |
+
+- 单段最长 **5 秒**：再短会把一句话切碎、明显掉翻译质量；再长则延迟变大。
+- 持续说话、模型追不上时，桥接**丢掉最旧的待处理片段**，优先保证最新一句（默认 3 段）。
+- 可调：`ITX_QUEUE_MAX`、`ITX_STALE_S`、`ITX_MAX_TOKENS`。
+
+> 为什么不做 Q4 / NPU？见 [docs/PROJECT-NOTES.md](docs/PROJECT-NOTES.md)。
+
+## 🚀 快速开始
 
 ### 1. 安装 APK
 
@@ -43,13 +91,13 @@ su -c 'pm grant com.itx.overlay android.permission.POST_NOTIFICATIONS'
 su -c 'cmd deviceidle whitelist +com.itx.overlay'
 ```
 
-（没有 root 也可以：在系统设置里手动开启"显示在其他应用的上层"、麦克风权限、自启动。）
+没有 root 也可以：在系统设置里手动开启"显示在其他应用的上层"、麦克风、自启动和电池无限制。
 
 ### 2. 准备引擎
 
-按 [部署指南](docs/deploy.md) 装好 Termux + 模型 + 编译 CrispASR，然后把 `itx/` 下的三个脚本放进手机 `~/itx/`：
+按 [部署指南](docs/deploy.md) 装好 Termux + 模型 + CrispASR，然后把 `itx/` 下的三个脚本放进手机 `~/itx/`：
 
-```
+```text
 ~/itx/live.py      # 桥接：麦克风 → 增益 → VAD → 模型 → 字幕
 ~/itx/start.sh     # 启动引擎 + 自动拉起 App
 ~/itx/stop.sh      # 停止引擎、释放内存
@@ -61,118 +109,131 @@ su -c 'cmd deviceidle whitelist +com.itx.overlay'
 bash ~/itx/start.sh
 ```
 
-约 5 秒后 App 自动弹出并进入字幕模式（状态「● 聆听中」），对着手机说中文即可。
+约 5 秒后 App 自动弹出并进入字幕模式（状态「● 聆听中」），对着手机说话即可。
 
-![启动引导](itx/guide.png)
+## 🧠 工作方式
 
-用完点悬浮窗右上角「退出」：
-
-![退出引导](itx/exitp.png)
-
-- App 会先通过本地 socket 通知引擎退出（模型内存释放）；
-- 界面显示 `bash ~/itx/stop.sh` 作为兜底（已自动复制到剪贴板）；
-- 点「关闭」结束。
-
-## 给 AI Agent 的一键安装
-
-仓库自带面向自动化 agent 的说明与引导脚本，agent 可以直接代你完成部署：
-
+```mermaid
+flowchart LR
+    A["🎙 麦克风<br/>16 kHz mono"] -->|PCM · TCP 17322| B["live.py<br/>8× 增益 · 能量 VAD<br/>最长 5 s"]
+    B -->|WAV · HTTP 8899| C["crispasr --server<br/>Index-Echo-2B Q8<br/>常驻 · 7 线程"]
+    C -->|双语字幕 · TCP 17321| D["ITX 悬浮窗<br/>大字译文 / 小字原文"]
 ```
-AGENTS.md                  agent 必读的约束清单（改代码前看）
-docs/agent-install.md      给 agent 的完整部署剧本（含需要发给用户的提示语）
+
+- App 采集 16 kHz 单声道，经本地 socket 交给 `live.py`；
+- `live.py` 做 8× 数字增益和 VAD，按句打包成内存 WAV，POST 给常驻的 CrispASR 服务；
+- 模型输出「转写 + 译文」，桥接按行解析后通过 JSON 行推给悬浮窗。
+
+## 🔁 双向互译是怎么做的
+
+CrispASR 的 `--target-lang` 只暴露 en/ja/es，无法直接指定"翻成中文"。所以用 `--ask` 改写指令，
+并把**译文方向锚定在转写文本**上（不是让模型猜音频语种——那样会把部分中文判成英文、整句不翻）：
+
+```text
+Output exactly two lines for each sentence, with no timestamps.
+Line 1: the transcript in the language actually spoken.
+Line 2: the translation into the other language. If line 1 contains Chinese
+characters, line 2 must be English. If line 1 is fully English, line 2 must be
+Chinese. Never repeat line 1 as line 2.
+```
+
+- 说中文 → 英文大字 + 中文小字；
+- 说英文 → 中文大字 + 英文小字；
+- 想固定单向：启动前 `export ITX_ASK='...'` 覆盖即可。
+
+实测：35 条 TTS 回归集 34 条正确；唯一失败是 0.3 秒的"嗯。"（低于 VAD 最小语音）。
+细节和踩坑见 [docs/PROJECT-NOTES.md](docs/PROJECT-NOTES.md)。
+
+## 🤖 给 AI Agent 的一键部署
+
+仓库自带面向自动化 agent 的说明和引导脚本：
+
+```text
+AGENTS.md                  agent 必读的硬约束
+docs/agent-install.md      完整部署剧本（含发给用户的话术）
+docs/PROJECT-NOTES.md      实测数据 / 历史决策 / 已否决路线
 tools/bootstrap_phone.sh   幂等的一键安装脚本
 ```
 
-在手机的 Termux 里两条命令即可：
+手机 Termux 里两条命令：
 
 ```bash
 git clone https://github.com/Baizhi-Angelica/IndexTranslate_OnXiaomi.git ~/itx-src
 bash ~/itx-src/tools/bootstrap_phone.sh
 ```
 
-脚本会依次：装系统包 → 装 `hf` → 下模型(2.6 GB) → 编 CrispASR → 编 APK → 装 APK → 授权 → 自检。
-没有 root 也能跑，脚本会在安装那步打印出手动授权步骤；需要用户配合的部分（装 Termux、设 SSH 密码、点权限开关）
-在 [docs/agent-install.md](docs/agent-install.md) 里都写成了可以直接复制发给用户的话术。
+脚本依次：装系统包 → 装 `hf` → 下模型（2.6 GB）→ 编 CrispASR → 编 APK → 装 APK → 授权 → 自检。
+没有 root 也能跑，会打印手动授权步骤。
 
-## 工作方式
-
-```
-麦克风 16 kHz 单声道
-      │  AudioRecord（前台服务，targetSdk 33）
-      ▼  TCP 127.0.0.1:17322
-  live.py ── 8× 数字增益 → 能量 VAD（静音 0.55s 收尾 / 最长 5s）
-      │      音频仅在内存中打包成 WAV
-      ▼  HTTP 127.0.0.1:8899
-  crispasr --server（index-echo-2b Q8，常驻，7 线程）
-      │      中文转写 + 英文翻译（逐句对照）
-      ▼  TCP 127.0.0.1:17321（JSON 行）
-  悬浮窗 App（大字=译文，小字=原文，中英自动切换）
-```
-
-## 项目结构
-
-```
-.
-├─ README.md                 中文说明（本文件）
-├─ README.en.md              English README
-├─ docs/
-│  ├─ deploy.md              新手机从零部署 + 17 条踩坑记录
-│  └─ PROJECT-NOTES.md       交接笔记：实测耗时 / v1.3 修复 / 已否决路线 / 踩坑
-├─ itx/
-│  ├─ live.py                桥接引擎
-│  ├─ start.sh / stop.sh     启动 / 停止
-│  ├─ app/                   悬浮窗 App 源码（Java）
-│  └─ *.png                  界面实拍
-├─ release/
-│  ├─ ITX-Subtitle-1.3.apk   预编译 APK（最新）
-├─ tools/
-│  ├─ phone.py               SSH/SFTP 小工具（凭据从 config/phone.env 读取）
-│  ├─ build_apk.sh           手机上构建 APK 的完整流程
-│  ├─ install_app.sh         安装 + 授权
-│  └─ cleanup_ports.sh       清理残留进程
-└─ config/
-   └─ phone.env.example      连接配置模板（真实值 phone.env 已被 gitignore）
-```
-
-## 可调参数（`live.py` 环境变量）
+## 📊 可调参数（`live.py`）
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `ITX_GAIN` | `8` | 麦克风数字增益（原始电平约 -46 dBFS） |
+| `ITX_GAIN` | `8` | 麦克风数字增益（原始电平约 −46 dBFS） |
 | `ITX_VAD_MIN` | `110` | VAD 绝对阈值 |
 | `ITX_SILENCE_MS` | `550` | 静音多久算一句结束 |
-| `ITX_MAX_SEG_MS` | `5000` | 单句最长长度 |
-| `ITX_THREADS` | `7` | 推理线程数（8 会死锁） |
-| `ITX_ASK` | 双向指令 | 覆盖模型指令；改它可固定单向或换目标语言 |
+| `ITX_MAX_SEG_MS` | `5000` | 单句最长长度（不建议再短） |
+| `ITX_THREADS` | `7` | 推理线程数（**8 会死锁**） |
+| `ITX_QUEUE_MAX` | `3` | 待处理队列上限，满了丢最旧 |
+| `ITX_STALE_S` | `20` | 排队超过多少秒直接跳过 |
+| `ITX_MAX_TOKENS` | `160` | 单次生成上限，防跑飞 |
+| `ITX_ASK` | 双向指令 | 覆盖模型指令，可固定单向 |
 
-## 双向互译（中 ⇄ 英）
+## 📁 项目结构
 
-CrispASR 的 `--target-lang` 只暴露 en/ja/es，但 index-echo 本质是"按指令输出三行字幕"的音频大模型，
-用 `--ask` 改写指令就能让它翻成**另一种语言**：
-
-- **说中文** → 英文大字 + 中文小字；
-- **说英文** → 中文大字 + 英文小字；
-- 方向由字幕内容自动判断，不需要任何开关。
-
-指令原文（`itx/live.py` 的 `BIDIR_ASK`）：
-
+```text
+.
+├─ README.md / README.en.md   中英文说明
+├─ LICENSE                    Apache License 2.0
+├─ docs/
+│  ├─ deploy.md               新手机从零部署 + 踩坑记录
+│  ├─ agent-install.md        给 agent 的部署剧本
+│  └─ PROJECT-NOTES.md        交接笔记：耗时 / 决策 / 已否决路线
+├─ itx/
+│  ├─ live.py                 桥接引擎
+│  ├─ start.sh / stop.sh      启动 / 停止
+│  ├─ app/                    悬浮窗 App 源码（Java）
+│  └─ *.png                   界面实拍
+├─ release/
+│  └─ ITX-Subtitle-1.3.apk    预编译 APK
+├─ tools/                     构建 / 安装 / SSH 辅助脚本
+└─ config/
+   └─ phone.env.example       连接配置模板（真实值已 gitignore）
 ```
-For each sentence, output three lines: the [MM:SS.CC-MM:SS.CC] timestamp,
-the transcript, then the translation into the other language
-(Chinese speech -> English; English speech -> Chinese).
-```
 
-想固定成单向，启动前用 `export ITX_ASK='...'` 覆盖即可。
+## 📚 文档
 
-## 已知限制
+| 文档 | 内容 |
+|---|---|
+| [docs/deploy.md](docs/deploy.md) | 新手机从零部署 + 踩坑总表 |
+| [docs/agent-install.md](docs/agent-install.md) | 给 AI agent 的完整部署剧本 |
+| [docs/PROJECT-NOTES.md](docs/PROJECT-NOTES.md) | 实测耗时、v1.3 修复、Q4/NPU 等已否决路线 |
+| [AGENTS.md](AGENTS.md) | 改代码前必读的硬约束 |
+
+## ⚠️ 已知限制
 
 - 单句超过 5 秒会被强制切分，字幕可能分成两条。
-- 安静环境偶尔被环境噪声触发，产生空转写（立即返回，不影响使用）。
+- 持续说话且模型追不上时会**主动丢旧句**（这是设计，不是 bug）；可用 `ITX_QUEUE_MAX` 调大。
+- 点「退出」后如果在同一进程里马上重开，MIUI 可能让录音静音；`bash ~/itx/stop.sh && bash ~/itx/start.sh` 可恢复。
+- 很安静的房间偶尔会被环境噪声触发，产生空转写（立即返回，不影响使用）。
 - 状态栏图标无法被第三方悬浮窗覆盖（系统限制）。
-- 首次启动模型加载约 5 秒。
-- 同一会话里中英混说时，模型的上下文可能串味，偶发一行错位（重新开始会话即可恢复）。
+- 首次启动加载模型约 5 秒。
+- 目前只针对小米 15 / HyperOS 调过，其他机型需要重新验证。
 
-## 相关项目
+## 📄 License
+
+本仓库代码采用 [Apache License 2.0](LICENSE)。
+
+第三方组件的署名见 [NOTICE](NOTICE)，各自遵循其许可证：
+
+- [Index-Echo-S2TT-2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) — Apache-2.0（B 站 Index 团队）
+- [CrispASR](https://github.com/CrispStrobe/CrispASR) — 见其仓库 LICENSE
+- [bilibili/Index-Translate](https://github.com/bilibili/Index-Translate) — 模型与论文
+
+## 🙏 Credits
 
 - [bilibili/Index-Translate](https://github.com/bilibili/Index-Translate) — 模型与论文
 - [CrispStrobe/CrispASR](https://github.com/CrispStrobe/CrispASR) — GGUF 推理运行时
+- 模型量化/GGUF 版本：[cstr/index-echo-2b-GGUF](https://huggingface.co/cstr/index-echo-2b-GGUF)
+
+
