@@ -103,12 +103,9 @@ bash ~/itx/start.sh
 
 ## 🧠 工作方式
 
-```mermaid
-flowchart LR
-    A[麦克风 16 kHz] -->|PCM 17322| B[live.py 增益 + VAD]
-    B -->|WAV 8899| C[crispasr server]
-    C -->|JSON 17321| D[悬浮窗]
-```
+<p align="center">
+  <img src="docs/images/architecture.zh.png" alt="数据流：麦克风 → live.py → CrispASR → 悬浮窗" width="1000">
+</p>
 
 - App 采集 16 kHz 单声道，经本地 socket 交给 `live.py`；
 - `live.py` 做 8× 数字增益和 VAD，按句打包成内存 WAV，POST 给常驻的 CrispASR 服务；

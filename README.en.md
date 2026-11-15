@@ -108,12 +108,9 @@ After ~5 s the app opens by itself in subtitle mode (`● 聆听中`). Start tal
 
 ## 🧠 How it works
 
-```mermaid
-flowchart LR
-    A[microphone 16 kHz] -->|PCM 17322| B[live.py gain + VAD]
-    B -->|WAV 8899| C[crispasr server]
-    C -->|JSON 17321| D[overlay]
-```
+<p align="center">
+  <img src="docs/images/architecture.en.png" alt="Data flow: microphone → live.py → CrispASR → overlay" width="1000">
+</p>
 
 - The app records 16 kHz mono and hands PCM to `live.py` over a local socket;
 - `live.py` applies 8× gain and VAD, packs each utterance into an in-memory WAV and POSTs it to
