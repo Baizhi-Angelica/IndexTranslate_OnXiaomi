@@ -50,16 +50,6 @@ the runtime is [CrispASR](https://github.com/CrispStrobe/CrispASR).
 | 🔓 **No root needed** | day-to-day use is one `start.sh` in Termux |
 | 🔄 **Auto rotation** | follows the system; nothing is forced or modified |
 
-## 🎬 Screens
-
-<p align="center">
-  <img src="itx/guide.png" width="720" alt="Start guide">
-</p>
-
-<p align="center">
-  <img src="itx/exitp.png" width="720" alt="Exit guide">
-</p>
-
 ## ⚡ Performance (measured)
 
 4 s speech, 7 threads, Q8 model, idle device:
@@ -120,9 +110,9 @@ After ~5 s the app opens by itself in subtitle mode (`● 聆听中`). Start tal
 
 ```mermaid
 flowchart LR
-    A["🎙 microphone<br/>16 kHz mono"] -->|PCM · TCP 17322| B["live.py<br/>8× gain · energy VAD<br/>max 5 s"]
-    B -->|WAV · HTTP 8899| C["crispasr --server<br/>Index-Echo-2B Q8<br/>resident · 7 threads"]
-    C -->|bilingual cues · TCP 17321| D["ITX overlay<br/>large translation / small transcript"]
+    A[microphone 16 kHz] -->|PCM 17322| B[live.py gain + VAD]
+    B -->|WAV 8899| C[crispasr server]
+    C -->|JSON 17321| D[overlay]
 ```
 
 - The app records 16 kHz mono and hands PCM to `live.py` over a local socket;
@@ -243,4 +233,12 @@ Third-party attributions are listed in [NOTICE](NOTICE); each component keeps it
 - [CrispStrobe/CrispASR](https://github.com/CrispStrobe/CrispASR) — GGUF inference runtime
 - GGUF build: [cstr/index-echo-2b-GGUF](https://huggingface.co/cstr/index-echo-2b-GGUF)
 
+
+
+---
+
+<p align="center">
+  <a href="README.md">简体中文</a> · <a href="README.en.md">English</a><br>
+  <sub>If this project helps you, a ⭐ star is appreciated.</sub>
+</p>
 

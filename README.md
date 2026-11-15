@@ -48,16 +48,6 @@
 | 🔓 **不需要 root** | 日常使用只要在 Termux 里一条 `start.sh` |
 | 🔄 **方向跟随系统** | 不强制、不修改任何系统设置 |
 
-## 🎬 效果
-
-<p align="center">
-  <img src="itx/guide.png" width="720" alt="启动引导">
-</p>
-
-<p align="center">
-  <img src="itx/exitp.png" width="720" alt="退出引导">
-</p>
-
 ## ⚡ 性能（实测）
 
 4 秒语音、7 线程、Q8 模型、干净状态：
@@ -115,9 +105,9 @@ bash ~/itx/start.sh
 
 ```mermaid
 flowchart LR
-    A["🎙 麦克风<br/>16 kHz mono"] -->|PCM · TCP 17322| B["live.py<br/>8× 增益 · 能量 VAD<br/>最长 5 s"]
-    B -->|WAV · HTTP 8899| C["crispasr --server<br/>Index-Echo-2B Q8<br/>常驻 · 7 线程"]
-    C -->|双语字幕 · TCP 17321| D["ITX 悬浮窗<br/>大字译文 / 小字原文"]
+    A[麦克风 16 kHz] -->|PCM 17322| B[live.py 增益 + VAD]
+    B -->|WAV 8899| C[crispasr server]
+    C -->|JSON 17321| D[悬浮窗]
 ```
 
 - App 采集 16 kHz 单声道，经本地 socket 交给 `live.py`；
@@ -236,4 +226,12 @@ bash ~/itx-src/tools/bootstrap_phone.sh
 - [CrispStrobe/CrispASR](https://github.com/CrispStrobe/CrispASR) — GGUF 推理运行时
 - 模型量化/GGUF 版本：[cstr/index-echo-2b-GGUF](https://huggingface.co/cstr/index-echo-2b-GGUF)
 
+
+
+---
+
+<p align="center">
+  <a href="README.en.md">English</a> · <a href="README.md">简体中文</a><br>
+  <sub>如果这个项目对你有帮助，欢迎点一个 ⭐ Star</sub>
+</p>
 
