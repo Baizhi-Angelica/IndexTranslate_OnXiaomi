@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="itx/hero.png" width="760" alt="IndexTranslate 悬浮窗效果">
 </p>
 
@@ -214,7 +214,8 @@ bash ~/itx-src/tools/bootstrap_phone.sh
 第三方组件的署名见 [NOTICE](NOTICE)，各自遵循其许可证：
 
 - [Index-Echo-S2TT-2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) — Apache-2.0（B 站 Index 团队）
-- [CrispASR](https://github.com/CrispStrobe/CrispASR) — 见其仓库 LICENSE
+- [CrispASR](https://github.com/CrispStrobe/CrispASR) — MIT
+- Silero VAD — MIT（语音边界检测）
 - [bilibili/Index-Translate](https://github.com/bilibili/Index-Translate) — 模型与论文
 
 ## 🙏 Credits

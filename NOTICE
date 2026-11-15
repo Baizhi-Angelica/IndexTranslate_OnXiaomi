@@ -7,8 +7,12 @@ This product includes software and models developed by third parties:
   Licensed under the Apache License, Version 2.0
   https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B
 
-- CrispASR, Copyright CrispStrobe contributors
-  See https://github.com/CrispStrobe/CrispASR for its license terms
+- CrispASR, Copyright 2023-2026 The ggml authors
+  Licensed under the MIT License
+  https://github.com/CrispStrobe/CrispASR
+
+- Silero VAD, Copyright Silero Team
+  Licensed under the MIT License (used for speech-boundary windows)
 
 - GGUF conversion: cstr/index-echo-2b-GGUF
   https://huggingface.co/cstr/index-echo-2b-GGUF

@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="itx/hero.png" width="760" alt="IndexTranslate overlay">
 </p>
 
@@ -221,7 +221,8 @@ Code in this repository is licensed under the [Apache License 2.0](LICENSE).
 Third-party attributions are listed in [NOTICE](NOTICE); each component keeps its own license:
 
 - [Index-Echo-S2TT-2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) — Apache-2.0 (Bilibili Index team)
-- [CrispASR](https://github.com/CrispStrobe/CrispASR) — see its LICENSE
+- [CrispASR](https://github.com/CrispStrobe/CrispASR) — MIT
+- Silero VAD — MIT (speech-boundary detection)
 - [bilibili/Index-Translate](https://github.com/bilibili/Index-Translate) — models and paper
 
 ## 🙏 Credits
