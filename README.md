@@ -1,5 +1,5 @@
-<p align="center">
-  <img src="itx/h2.png" width="760" alt="IndexTranslate 悬浮窗效果">
+﻿<p align="center">
+  <img src="itx/hero.png" width="760" alt="IndexTranslate 悬浮窗效果">
 </p>
 
 <h1 align="center">IndexTranslate · 小米 15 本地实时中英字幕</h1>
@@ -231,4 +231,5 @@ bash ~/itx-src/tools/bootstrap_phone.sh
   <a href="README.en.md">English</a> · <a href="README.md">简体中文</a><br>
   <sub>如果这个项目对你有帮助，欢迎点一个 ⭐ Star</sub>
 </p>
+
 

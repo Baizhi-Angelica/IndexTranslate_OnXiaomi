@@ -1,5 +1,5 @@
-<p align="center">
-  <img src="itx/h2.png" width="760" alt="IndexTranslate overlay">
+﻿<p align="center">
+  <img src="itx/hero.png" width="760" alt="IndexTranslate overlay">
 </p>
 
 <h1 align="center">IndexTranslate · Real-time zh⇄en subtitles on Xiaomi 15</h1>
@@ -238,4 +238,5 @@ Third-party attributions are listed in [NOTICE](NOTICE); each component keeps it
   <a href="README.md">简体中文</a> · <a href="README.en.md">English</a><br>
   <sub>If this project helps you, a ⭐ star is appreciated.</sub>
 </p>
+
 
