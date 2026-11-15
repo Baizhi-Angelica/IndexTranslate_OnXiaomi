@@ -3,6 +3,9 @@
 面向自动化 agent 的仓库说明。人类用户请看 [README.md](README.md)；
 替用户部署请照 [docs/agent-install.md](docs/agent-install.md) 执行。
 
+> **动手前先读 [docs/PROJECT-NOTES.md](docs/PROJECT-NOTES.md)**：实测耗时、v1.3 的四个关键修复、
+> 已证伪的优化路线（Q4 / NPU / 提速调参）和踩坑都在那里，能少走很多弯路。
+
 ## 这是什么
 
 在 Android（小米 15 / HyperOS，Android 16 验证）上跑**全离线实时中英字幕悬浮窗**：
@@ -40,6 +43,9 @@ Termux 已安装、代理 `127.0.0.1:7890` 可用、`pkg install python git open
 | 队列必须**丢最旧、留最新**（`ITX_QUEUE_MAX`，默认 3；`ITX_STALE_S`，默认 20） | 连续说话时模型追不上，应该优先显示最近的话；排队 15 秒再显示旧片段没有意义 |
 | 每次请求带 `max_tokens`（`ITX_MAX_TOKENS`，默认 160） | 服务端默认上限 2000，解码跑飞时一段能拖几十秒；160 足够两行字幕，且不影响正常输出 |
 | App 在引擎断开时**不要** stop/release `AudioRecord` | MIUI 会把同一进程里重新打开的录音**永久静音**（所有帧为 0，日志 `AudioRecordImpl: [audioRecordData][mute]`）；只能保持录音对象、继续 `read` 丢弃并重连，靠 `stop.sh` 的 force-stop 真正释放麦克风 |
+| **不要**再试 Q4/Q5 量化 | 官方 Q4_K_M 实测精度 99%→90%，翻译不可接受，已撤版；未经 owner 同意不要再跑 |
+| **不要**把 NPU / Vulkan / OpenCL 当作近期优化 | Termux 进程拿不到 `/vendor/lib64` 的驱动命名空间（OpenCL 实测被 linker 拒绝，Vulkan 只有 swrast）；QNN/Genie 需整模型转换；即使预填充+编码全免费也只省 1.6/3.9 s，详见 PROJECT-NOTES |
+| App 退出后同进程重开录音会静音 | 遇到"说话没反应"先 `stop.sh` + `start.sh` 重启进程；彻底修法见 PROJECT-NOTES 第 6 节 |
 
 ## 关键路径
 

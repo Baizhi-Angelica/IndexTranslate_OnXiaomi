@@ -116,7 +116,8 @@ bash ~/itx-src/tools/bootstrap_phone.sh
 ├─ README.md                 中文说明（本文件）
 ├─ README.en.md              English README
 ├─ docs/
-│  └─ deploy.md              新手机从零部署 + 17 条踩坑记录
+│  ├─ deploy.md              新手机从零部署 + 17 条踩坑记录
+│  └─ PROJECT-NOTES.md       交接笔记：实测耗时 / v1.3 修复 / 已否决路线 / 踩坑
 ├─ itx/
 │  ├─ live.py                桥接引擎
 │  ├─ start.sh / stop.sh     启动 / 停止
